@@ -1,0 +1,54 @@
+
+/*| echo: false */
+
+/* 1. Force the container to use the full screen width */
+body .quarto-container {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 2% !important;
+}
+
+/* 2. Push the Table of Contents to the far left */
+#quarto-margin-sidebar {
+    padding-left: 10px !important;
+    margin-left: 0 !important;
+    width: 250px !important;
+}
+
+/* 3. Ensure the main content starts immediately after the TOC */
+#quarto-content {
+    margin-left: 10px !important;
+    display: flex !important;
+    gap: 20px !important;
+}
+
+/* 4. Fix for the overlapping header in your screenshot */
+header#title-block-header {
+    margin-left: 20px !important;
+    padding-top: 20px !important;
+}
+
+/* 1. Tighten the sidebar width */
+#quarto-margin-sidebar {
+    width: 220px !important;
+    flex-basis: 220px !important;
+}
+
+/* 2. Pull the content container to the left */
+#quarto-content {
+    gap: 10px !important; /* This is the space between TOC and content */
+    margin-left: 10px !important;
+}
+
+/* 3. Stop the main text from centering itself with massive margins */
+main.content {
+    margin-left: 20px !important; /* Space between TOC and your text/plots */
+    margin-right: auto !important; 
+    max-width: 95% !important; /* Allow the content to fill the screen width */
+}
+
+/* 4. Align the title block to the left as well */
+header#title-block-header {
+    margin-left: 20px !important;
+    text-align: left !important;
+}
