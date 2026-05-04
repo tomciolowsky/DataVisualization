@@ -1,7 +1,9 @@
 ---
 title: "Data Visualization Report"
 subtitle: "Poznań University of Technology"
-author: "Tomasz Białecki"
+author: 
+    - "Tomasz Białecki"
+    - "Marcin Dzióbkowski"
 date: last-modified
 format:
   html:
@@ -12,18 +14,31 @@ format:
     embed-resources: true
     code-fold: true
     code-summary: "Show the code"
+    css: style.css
 ---
 
-# Executive Summary
+::: {#top-right-logo}
+![](PUT_logo.png){width="180px"}
+:::
 
-<img src="PUT_logo.png" alt="PUT logo" width="200"/>
+# Executive Summary
 
 This report provides a comprehensive overview of the United States civil disorder dataset from the end of year 2019 to the beggining of year 2026. We analyze the geographic distribution of protests and frequency, intensity, character of disorder events. Moreover, we ... [TODO]
 
 Key findings include:
+
 - Location: High concentration of events in the coastal states, particularly in California and New York.
+
 - Frequency & Intensity: No clear seasonal pattern, dominance of national scale events.
+
 - Character: Dominance of peaceful protests, with a minority of violent events.
+
+- TODO:
+
+- TODO:
+
+- TODO:
+
 
 ```{python}
 #| label: data-reading-and-imports
@@ -31,6 +46,11 @@ Key findings include:
 #| warning: false
 
 import pandas as pd
+import geopandas as gpd
+import matplotlib.gridspec as gridspec
+import matplotlib.pyplot as plt
+import numpy as np
+import matplotlib.patches as mpatches
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -41,7 +61,7 @@ raw_data = pd.read_excel("conflict data\\US-and-Canada_aggregated_data_up_to-202
 
 # 1. Geographic Distribution of Protests in the US
 
-A short description: [TODO]
+A short description: In this section, we use choropleth maps to visualize the difference in the number of protests across the United States. We show both the number of protests in each state and the number of distinct events that took place during those protests.
 
 ```{python}
 #| label: data-processing-US-protests
@@ -186,7 +206,7 @@ fig.show()
 
 # 2. Character of Civil Disorders in the US
 
-A short description: [TODO]
+A short description: Here, we use the sunburst charts to show the numbers of incidents and their hierarchy in the United States. We show the distribution of incidents across different disorder types, event types, and sub-event types.
 
 ```{python}
 #| label: data-processing-disorder-character
@@ -195,7 +215,6 @@ A short description: [TODO]
 columns_to_keep = ["WEEK", "COUNTRY", "ADMIN1", "EVENT_TYPE", "SUB_EVENT_TYPE", "EVENTS", "DISORDER_TYPE", "ID"]
 df = raw_data[columns_to_keep]
 df = df[df["COUNTRY"] == "United States"]
-df = df[df['DISORDER_TYPE'] != "Political violence; Demonstrations"]
 
 ```
 
@@ -215,7 +234,7 @@ def wrap_label(text, width=15):
     return "<br>".join(textwrap.wrap(text, width=width))
 
 def get_polished_hierarchy(df, group_name):
-    subset = df[df['DISORDER_TYPE'] == group_name]
+    subset = df[df["DISORDER_TYPE"].str.contains(group_name, case=False, na=False)]
     
     et_data = subset.groupby('EVENT_TYPE').agg(
         incidents=('ID', 'count'),
@@ -249,12 +268,13 @@ def get_polished_hierarchy(df, group_name):
 
 
 groups = ['Demonstrations', 'Strategic developments', 'Political violence']
+groups_newlines = [f"Demonstrations", f"Strategic<br>developments", f"Political<br>violence"]
 colors = ['#2c3e50', '#27ae60', '#e74c3c'] 
 
 fig = make_subplots(
     rows=1, cols=3,
     specs=[[{'type': 'sunburst'}]*3],
-    subplot_titles=[f"<b>{g.upper()}</b>" for g in groups]
+    subplot_titles=[f"<b>{g.upper()}</b>" for g in groups_newlines]
 )
 
 for i, group in enumerate(groups):
@@ -307,7 +327,7 @@ fig.show()
 
 # 3. Regional monthly intensity of Disorders in the US
 
-A short description: [TODO]
+A short description: In this part, we use a heatmap to visualize the number of distinct events that took place in 10 most affected states in the US. This plot allows us to see how the intensity changes over months.
 
 ```{python}
 #| label: data-processing-monthly-intensity
@@ -387,4 +407,73 @@ fig.update_layout(
 fig.update_traces(xgap=2, ygap=2)
 
 fig.show()
+```
+
+# 4. TODO
+
+A short description: [TODO]
+
+```{python}
+#| label: data-processing-TODO-4
+#| echo: false
+#| warning: false
+
+pass
+
+```
+
+```{python}
+#| label: fig1-TODO-4
+#| fig-cap: "TODO"
+#| echo: false
+#| warning: false
+
+pass
+
+```
+
+# 5. TODO
+
+A short description: [TODO]
+
+```{python}
+#| label: data-processing-TODO-5
+#| echo: false
+#| warning: false
+
+pass
+
+```
+
+```{python}
+#| label: fig1-TODO-5
+#| fig-cap: "TODO"
+#| echo: false
+#| warning: false
+
+pass
+
+```
+
+# 6. TODO
+
+A short description: [TODO]
+
+```{python}
+#| label: data-processing-TODO-6
+#| echo: false
+#| warning: false
+
+pass
+
+```
+
+```{python}
+#| label: fig1-TODO-6
+#| fig-cap: "TODO"
+#| echo: false
+#| warning: false
+
+pass
+
 ```
