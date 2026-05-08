@@ -23,22 +23,21 @@ format:
 
 # Executive Summary
 
-This report provides a comprehensive overview of the United States civil disorder dataset from the end of year 2019 to the beggining of year 2026. We analyze the geographic distribution of protests and frequency, intensity, character of disorder events. Moreover, we ... [TODO]
+This report provides a comprehensive overview of global geopolitical events, evaluating their structural trends and their direct impact on regional populations. By analyzing the frequency and character of these events, we distinguish between regions defined by kinetic conflict and those defined by civil expression. As evidenced by the provided visualizations, the United States and Canada represent a statistically unique region. While the global landscape is often dominated by "Battles" and "Explosions," North America exhibits a distinct event structure that is dominated by the democratic-led events. For this reason the second part of this report narrows the focus to civil disorder within the United States from the end of 2019 through the beginning of 2026. We analyze the geographic distribution of protests and frequency, intensity, character of disorder events.
 
 Key findings include:
+
+- Unique structure of fatalities in US region: The United States and Canada represent a unique geopolitical profile within the global dataset. While other regions are defined by high-intensity "Battles" and "Explosions," US and Canada region is characterized by the lowest overall lethality and a disorder structure almost exclusively comprised of Riots and Violence against Civilians.
+
+- Correlation Between Event Nature and Casualty Profiles: A clear link exists between the "type" of violence and "who" dies. In regions where military-centric events prevail, such as Africa and the Middle East, the violence is targeted, consequently, non-civilian fatalities vastly outnumber civilian ones.
+
+- Non-Lethality of Peaceful Protest: Despite the prevalence of civil expression in US and Canada region, the data confirms that **peaceful protests** contribute a statistically negligible number of fatalities.
 
 - Location: High concentration of events in the coastal states, particularly in California and New York.
 
 - Frequency & Intensity: No clear seasonal pattern, dominance of national scale events.
 
 - Character: Dominance of peaceful protests, with a minority of violent events.
-
-- TODO:
-
-- TODO:
-
-- TODO:
-
 
 ```{python}
 #| label: data-reading-and-imports
@@ -55,11 +54,515 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import textwrap
-raw_data = pd.read_excel("conflict data\\US-and-Canada_aggregated_data_up_to-2026-02-28.xlsx")
+raw_data = pd.read_excel("conflict data/US-and-Canada_aggregated_data_up_to-2026-02-28.xlsx")
+africa_data = pd.read_excel('conflict data/Africa_aggregated_data_up_to-2026-02-28.xlsx')
+asia_pacific_data = pd.read_excel('conflict data/Asia-Pacific_aggregated_data_up_to-2026-02-28.xlsx')
+europe_cental_asia_data = pd.read_excel('conflict data/Europe-Central-Asia_aggregated_data_up_to-2026-02-28.xlsx')
+latin_america_data = pd.read_excel('conflict data/Latin-America-the-Caribbean_aggregated_data_up_to-2026-02-28.xlsx')
+middle_east_data = pd.read_excel('conflict data/Middle-East_aggregated_data_up_to-2026-02-28.xlsx')
+us_canada_data = pd.read_excel('conflict data/US-and-Canada_aggregated_data_up_to-2026-02-28.xlsx')
+
+data = {
+    'Africa': africa_data,
+    'Asia Pacific': asia_pacific_data,
+    'Europe Central Asia': europe_cental_asia_data,
+    'Latin America': latin_america_data,
+    'Middle East': middle_east_data,
+    'US Canada': us_canada_data
+}
+
+civ_fat = pd.read_excel('conflict data/number_of_reported_civilian_fatalities_by_country-year_as-of-06Mar2026.xlsx')
+fat = pd.read_excel('conflict data/number_of_reported_fatalities_by_country-year_as-of-06Mar2026.xlsx')
+
+region_countries = {k: [] for k in data.keys()}
+
+for region, reg_data in data.items():
+    region_countries[region].extend(reg_data['COUNTRY'].unique().tolist())
+
 
 ```
 
-# 1. Geographic Distribution of Protests in the US
+# 1. Political violence events in regions
+
+This graph synthesizes three dimensions of political violence: event frequency, fatality rates, and disorder structure. A regional contrast emerges: Africa’s high fatality rate is tied to its high proportion of “Battle” events. In contrast, the US and Canada show the lowest overall violence and lethality. Interestingly, the latter's disorder structure is dominated by “Riots” and “Violence against civilians” reflecting a pattern of domestic unrest rather than high-intensity conflict.
+
+```{python}
+#| label: data-processing-political-violence
+#| echo: false
+#| warning: false
+
+results = []
+all_event_types = set()
+
+for region, reg_data in data.items():
+    pv_data = reg_data[reg_data["DISORDER_TYPE"] == "Political violence"]
+
+    num_of_events = pv_data["EVENTS"].sum()
+    fatalities_sum = pv_data["FATALITIES"].sum()
+    ratio = fatalities_sum / num_of_events if num_of_events > 0 else 0
+
+    results.append(
+        {
+            "Region": region,
+            "Events": num_of_events,
+            "Fatalities": fatalities_sum,
+            "Fatalities_to_Events": ratio,
+        }
+    )
+    all_event_types.update(pv_data["EVENT_TYPE"].dropna().unique())
+
+summary_df = pd.DataFrame(results)
+all_event_types = sorted(list(all_event_types))
+
+proportions_data = []
+for region, reg_data in data.items():
+    pv_data = reg_data[reg_data["DISORDER_TYPE"] == "Political violence"]
+    event_counts = pv_data.groupby("EVENT_TYPE")["EVENTS"].sum()
+    total_events = event_counts.sum()
+
+    region_props = {"Region": region}
+    for et in all_event_types:
+        if total_events > 0:
+            region_props[et] = event_counts.get(et, 0) / total_events
+        else:
+            region_props[et] = 0.0
+    proportions_data.append(region_props)
+
+props_df = pd.DataFrame(proportions_data).set_index("Region")
+
+regions_countries = {
+    "Africa": [
+        "Algeria", "Angola", "Benin", "Botswana", "British Indian Ocean Territory", "Burkina Faso", 
+        "Burundi", "Cameroon", "Cape Verde", "Central African Republic", "Central African Rep.", 
+        "Chad", "Comoros", "Democratic Republic of Congo", "Dem. Rep. Congo", "Djibouti", 
+        "Egypt", "Equatorial Guinea", "Eq. Guinea", "Eritrea", "Ethiopia", "Gabon", "Gambia", 
+        "Ghana", "Guinea", "Guinea-Bissau", "Ivory Coast", "Côte d'Ivoire", "Kenya", "Lesotho", 
+        "Liberia", "Libya", "Madagascar", "Malawi", "Mali", "Mauritania", "Mauritius", "Mayotte", 
+        "Morocco", "Mozambique", "Namibia", "Niger", "Nigeria", "Republic of Congo", "Congo", 
+        "Reunion", "Rwanda", "Saint Helena, Ascension and Tristan da Cunha", "Sao Tome and Principe", 
+        "Senegal", "Seychelles", "Sierra Leone", "Somalia", "South Africa", "South Sudan", "S. Sudan", 
+        "Sudan", "Tanzania", "Togo", "Tunisia", "Uganda", "Zambia", "Zimbabwe", "eSwatini", "Swaziland"
+    ],
+    "Asia Pacific": [
+        "Afghanistan", "American Samoa", "Antarctica", "Australia", "Bangladesh", "Bhutan", "Brunei", 
+        "Cambodia", "China", "Christmas Island", "Cook Islands", "East Timor", "Timor-Leste", "Fiji", 
+        "French Polynesia", "Guam", "India", "Indonesia", "Japan", "Kiribati", "Laos", "Malaysia", 
+        "Maldives", "Marshall Islands", "Micronesia", "Mongolia", "Myanmar", "Nauru", "Nepal", 
+        "New Caledonia", "New Zealand", "Niue", "North Korea", "Northern Mariana Islands", "Pakistan", 
+        "Palau", "Papua New Guinea", "Philippines", "Samoa", "Singapore", "Solomon Islands", 
+        "South Korea", "Sri Lanka", "Taiwan", "Thailand", "Tokelau", "Tonga", "Tuvalu", "Vanuatu", 
+        "Vietnam", "Wallis and Futuna"
+    ],
+    "Europe Central Asia": [
+        "Akrotiri and Dhekelia", "Albania", "Andorra", "Armenia", "Austria", "Azerbaijan", 
+        "Bailiwick of Guernsey", "Bailiwick of Jersey", "Belarus", "Belgium", "Bosnia and Herzegovina", 
+        "Bosnia and Herz.", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Czechia", "Denmark", 
+        "Estonia", "Faroe Islands", "Finland", "France", "Georgia", "Germany", "Gibraltar", "Greece", 
+        "Greenland", "Hungary", "Iceland", "Ireland", "Isle of Man", "Italy", "Kazakhstan", "Kosovo", 
+        "Kyrgyzstan", "Latvia", "Liechtenstein", "Lithuania", "Luxembourg", "Malta", "Moldova", 
+        "Monaco", "Montenegro", "Netherlands", "North Macedonia", "Macedonia", "Norway", "Poland", 
+        "Portugal", "Romania", "Russia", "San Marino", "Serbia", "Slovakia", "Slovenia", "Spain", 
+        "Sweden", "Switzerland", "Tajikistan", "Turkmenistan", "Ukraine", "United Kingdom", 
+        "Uzbekistan", "Vatican City"
+    ],
+    "Latin America": [
+        "Anguilla", "Antigua and Barbuda", "Argentina", "Aruba", "Bahamas", "Barbados", "Belize", 
+        "Bolivia", "Brazil", "British Virgin Islands", "Caribbean Netherlands", "Cayman Islands", 
+        "Chile", "Colombia", "Costa Rica", "Cuba", "Curacao", "Dominica", "Dominican Republic", 
+        "Dom. Rep.", "Ecuador", "El Salvador", "Falkland Islands", "Falkland Is.", "French Guiana", 
+        "Grenada", "Guadeloupe", "Guatemala", "Guyana", "Haiti", "Honduras", "Jamaica", "Martinique", 
+        "Mexico", "Montserrat", "Nicaragua", "Panama", "Paraguay", "Peru", "Puerto Rico", 
+        "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines", "Saint-Barthelemy", 
+        "Saint-Martin", "Sint Maarten", "Suriname", "Trinidad and Tobago", "Turks and Caicos Islands", 
+        "Uruguay", "Venezuela", "Virgin Islands, U.S."
+    ],
+    "Middle East": [
+        "Bahrain", "Iran", "Iraq", "Israel", "Jordan", "Kuwait", "Lebanon", "Oman", "Palestine", 
+        "Qatar", "Saudi Arabia", "Syria", "Turkey", "United Arab Emirates", "Yemen"
+    ],
+    "US Canada": [
+        "Bermuda", "Canada", "Saint Pierre and Miquelon", "United States", "United States of America"
+    ],
+}
+
+country_to_region = {
+    country.lower(): region
+    for region, countries in regions_countries.items()
+    for country in countries
+}
+
+country_to_region["united states of america"] = "US Canada"
+country_to_region["s. sudan"] = "Africa"
+country_to_region["dem. rep. congo"] = "Africa"
+country_to_region["central african rep."] = "Africa"
+country_to_region["eq. guinea"] = "Africa"
+country_to_region["cote d'ivoire"] = "Africa"
+country_to_region["bosnia and herz."] = "Europe Central Asia"
+country_to_region["czechia"] = "Europe Central Asia"
+country_to_region["falkland is."] = "Latin America"
+country_to_region["dom. rep."] = "Latin America"
+
+url = "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_110m_admin_0_countries.geojson"
+world = gpd.read_file(url)
+world.columns = world.columns.str.lower()
+
+world["Region"] = world["name"].apply(
+    lambda x: country_to_region.get(str(x).strip().lower())
+)
+world["Region"] = world["Region"].fillna("Other")
+
+world["geometry"] = world["geometry"].buffer(0)
+world_regions = world.dissolve(by="Region").reset_index()
+
+world_regions["geometry"] = world_regions["geometry"].buffer(0.01).buffer(-0.01)
+
+merged_map_data = world_regions.merge(summary_df, on="Region", how="left")
+
+```
+
+```{python}
+#| label: fig1-political-violence
+#| fig-cap: "Global distribution and structural breakdown of political violence and fatality proportions across six geopolitical regions"
+#| echo: false
+#| warning: false
+#| fig-width: 11
+#| fig-height: 16
+#| out-width: 100%
+#| fig-format: svg
+
+
+fig = plt.figure(figsize=(11, 16))
+
+gs = gridspec.GridSpec(
+    2, 2, figure=fig, 
+    height_ratios=[1, 0.8], 
+    hspace=0.2, 
+    wspace=0.1
+)
+
+ax_map1 = fig.add_subplot(gs[0, 0])
+ax_map1.set_title("Total Political Violence Events", fontsize=15, fontweight="bold", pad=15)
+
+world_regions.plot(ax=ax_map1, color="#f4f4f4", edgecolor="none")
+merged_map_data.dropna(subset=["Events"]).plot(
+    column="Events",
+    cmap="Blues",
+    ax=ax_map1,
+    legend=True,
+    legend_kwds={
+        "label": "Total Events",
+        "orientation": "horizontal",
+        "pad": 0.02,
+        "shrink": 0.6,
+    },
+)
+world_regions.plot(ax=ax_map1, facecolor="none", edgecolor="#555555", linewidth=0.3)
+ax_map1.axis("off")
+
+
+ax_map2 = fig.add_subplot(gs[0, 1])
+ax_map2.set_title("Fatalities to Events Proportion", fontsize=15, fontweight="bold", pad=15)
+
+world_regions.plot(ax=ax_map2, color="#f4f4f4", edgecolor="none")
+merged_map_data.dropna(subset=["Fatalities_to_Events"]).plot(
+    column="Fatalities_to_Events",
+    cmap="Blues",
+    ax=ax_map2,
+    legend=True,
+    legend_kwds={
+        "label": "Fatalities per Event",
+        "orientation": "horizontal",
+        "pad": 0.02,
+        "shrink": 0.6,
+    },
+)
+world_regions.plot(ax=ax_map2, facecolor="none", edgecolor="#555555", linewidth=0.3)
+ax_map2.axis("off")
+
+
+ax_bar = fig.add_subplot(gs[1, :])
+ax_bar.set_title("Proportion of Disorder Types by Region", fontsize=15, fontweight="bold", pad=20)
+
+props_df_sorted = props_df.iloc[::-1]
+colors = plt.cm.get_cmap("Set2", len(all_event_types))
+lefts = pd.Series(0.0, index=props_df_sorted.index)
+
+for idx, event_type in enumerate(all_event_types):
+    ax_bar.barh(
+        props_df_sorted.index,
+        props_df_sorted[event_type],
+        left=lefts,
+        label=event_type,
+        color=colors(idx),
+        height=0.6,
+    )
+    lefts += props_df_sorted[event_type]
+
+ax_bar.spines["top"].set_visible(False)
+ax_bar.spines["right"].set_visible(False)
+ax_bar.spines["left"].set_visible(False)
+ax_bar.set_xlabel("Proportion of Events", fontsize=14)
+ax_bar.set_xlim(0, 1.0)
+ax_bar.tick_params(axis="both", which="major", labelsize=13)
+
+ax_bar.legend(
+    loc="upper center",
+    bbox_to_anchor=(0.5, -0.15),
+    ncol=len(all_event_types),
+    frameon=False,
+    fontsize=13,
+)
+
+plt.tight_layout()
+plt.show()
+
+```
+
+# 2. Fatalities proportions across geopolitical regions
+
+The graph illustrates the ratio of civilian to non-civilian fatalities across six geopolitical regions, categorized by the prevalence of military versus non-military events. A distinct pattern emerges: in regions marked by high levels of military political violence, non-civilian casualties vastly outnumber civilian ones. Conversely, in regions where non-military political violence predominate—specifically North America and Latin America—the proportion of civilian fatalities approaches 50%. While non-civilian deaths still constitute the majority in these areas, the civilian casualty rate is significantly higher than in regions dominated by traditional military conflict.
+
+```{python}
+#| label: data-processing-fatalities-proportions
+#| echo: false
+#| warning: false
+
+
+region_fat = {}
+
+for region in data.keys():
+    civilian_fat = civ_fat[civ_fat['COUNTRY'].isin(region_countries[region])]['FATALITIES'].sum()
+    non_civilian_fat = fat[fat['COUNTRY'].isin(region_countries[region])]['FATALITIES'].sum()
+    
+    region_fat[region] = {
+        'Civilian': civilian_fat,
+        'Non Civilian': non_civilian_fat
+    }
+    
+region_fat = pd.DataFrame(region_fat)
+
+military_prevails = props_df_sorted[
+    props_df_sorted[["Battles", "Explosions/Remote violence"]].sum(axis=1) > 0.5
+]
+group_military = military_prevails.index.tolist()
+group_non_military = list(set(data.keys()).difference(group_military))
+
+region_fat_prop = (region_fat / region_fat.sum()).T
+df_sorted = region_fat_prop.sort_values(by="Civilian", ascending=True)
+
+df_to_plot = df_sorted[["Civilian", "Non Civilian"]]
+
+
+```
+
+```{python}
+#| label: fig1-fatalities-proportions
+#| fig-cap: "Regional Proportions of Civilian and Non-Civilian Fatalities. Casualties are categorized by actor type (green/orange) and grouped by conflict environment (background shading). Red-shaded rows represent regions where non-military political violence events prevail, while blue-shaded rows indicate a prevalence of military-driven political violence"
+#| echo: false
+#| warning: false
+#| #| fig-width: 11
+#| fig-height: 7
+#| out-width: 100%
+#| fig-format: svg
+
+fig, ax = plt.subplots(figsize=(11, 7))
+
+cmap = plt.get_cmap("Set2")
+ax_colors = [cmap(0), cmap(1)]
+
+df_to_plot.plot.barh(
+    ax=ax,
+    stacked=True,
+    color=ax_colors,
+    edgecolor="none",
+    width=0.55,
+    zorder=3,
+)
+
+ax.set_title(
+    "Proportion of Civilian and Non-Civilian Fatalities by Region",
+    fontsize=16,
+    pad=20,
+)
+
+ax.xaxis.set_visible(False)
+
+def shade_group(regions, bg_color):
+    pos = [i for i, r in enumerate(df_to_plot.index) if r in regions]
+    if pos:
+        y_min, y_max = min(pos) - 0.5, max(pos) + 0.5
+        ax.axhspan(y_min, y_max, color=bg_color, alpha=0.15, zorder=1)
+
+
+shade_group(group_military, "#2b5c8f")
+shade_group(group_non_military, "#e06d53")
+
+ax.spines["top"].set_visible(False)
+ax.spines["right"].set_visible(False)
+ax.spines["left"].set_visible(False)
+ax.spines["bottom"].set_visible(False)
+
+ax.tick_params(axis="both", which="both", length=0, labelsize=11)
+
+bar_handles, bar_labels = ax.get_legend_handles_labels()
+
+shade_handles = [
+    mpatches.Patch(color="#2b5c8f", alpha=0.15, label="Prevails military events"),
+    mpatches.Patch(
+        color="#e06d53", alpha=0.15, label="Prevails non-military events"
+    ),
+]
+
+all_handles = bar_handles + shade_handles
+
+ax.legend(
+    handles=all_handles,
+    loc="upper center",
+    bbox_to_anchor=(0.5, -0.12),
+    ncol=2,
+    frameon=False,
+    fontsize=11,
+)
+
+plt.tight_layout()
+plt.show()
+
+```
+
+# 3. Structure of fatalities across regions
+
+This interactive visualization tracks annual fatality trends by region, offering a granular look at the evolving nature of political violence. Using the dropdown menu, users can filter data by geography, while the color-coded stacked bars and hover-activated tooltips reveal the specific event types and sub-events driving these numbers.
+
+Several key regional insights emerge from the data:
+
+- **US & Canada:** Fatalities are overwhelmingly concentrated in the "Violence against civilians" category. Notably, fatalities associated with peaceful protests remain statistically negligible across all years.
+
+- **Africa & Asia Pacific:** Both regions show a sustained prevalence of high-intensity conflict. Africa experienced a significant surge in "Battle" casualties between 2005 and 2025, while the Asia Pacific region saw battle-related deaths spike in 2017, maintaining those elevated levels in the years since.
+
+- **Middle East:** The data reveals a radical structural pivot in 2026. While the preceding decade was defined by battles and explosions, 2026 marks an unprecedented "explosion" in Riot-related fatalities, a category that was nearly non-existent in previous years.
+
+```{python}
+#| label: data-processing-fatalities-strructure
+#| echo: false
+#| warning: false
+
+plot_data_bundle = {}
+
+for continent, df in data.items():
+    processed_df = (
+        df.set_index('WEEK')
+        .sort_index()
+        .groupby('EVENT_TYPE')
+        .resample('YE')['FATALITIES']
+        .sum()
+        .unstack(0)
+        .fillna(0)
+    )
+    
+    sub_event_summary = (
+        df.assign(YEAR=df['WEEK'].dt.year)
+        .groupby(['YEAR', 'EVENT_TYPE', 'SUB_EVENT_TYPE'])['FATALITIES']
+        .sum()
+        .reset_index()
+        .sort_values(['YEAR', 'EVENT_TYPE', 'FATALITIES'], ascending=[True, True, False])
+    )
+
+    continent_hovers = {}
+    years = processed_df.index.year
+    
+    for event_type in processed_df.columns:
+        hover_labels = []
+        for year in years:
+            subs = sub_event_summary[
+                (sub_event_summary['YEAR'] == year) & 
+                (sub_event_summary['EVENT_TYPE'] == event_type) &
+                (sub_event_summary['FATALITIES'] > 0)
+            ]
+            
+            if not subs.empty:
+                sub_text = "<br>".join([f"• {row.SUB_EVENT_TYPE}: {int(row.FATALITIES)}" for row in subs.itertuples()])
+                hover_labels.append(f"<b>{event_type} ({year})</b><br>{sub_text}")
+            else:
+                hover_labels.append(f"<b>{event_type} ({year})</b><br>No data")
+        
+        continent_hovers[event_type] = hover_labels
+
+    plot_data_bundle[continent] = {
+        'bars': processed_df,
+        'hovers': continent_hovers
+    }
+
+```
+
+```{python}
+#| label: fig1-fatalities-strructure
+#| fig-cap: "Interactive Regional Fatality Trends by Event Type. Annual total fatalities categorized by event type"
+#| echo: false
+#| warning: false
+
+fig = go.Figure()
+buttons = []
+trace_counter = 0
+continents = list(plot_data_bundle.keys())
+
+total_traces = sum(len(bundle['bars'].columns) for bundle in plot_data_bundle.values())
+
+for i, continent in enumerate(continents):
+    bundle = plot_data_bundle[continent]
+    df_bars = bundle['bars']
+    dict_hovers = bundle['hovers']
+    
+    num_event_types = len(df_bars.columns)
+    
+    for event_type in df_bars.columns:
+        fig.add_trace(
+            go.Bar(
+                x=df_bars.index.year,
+                y=df_bars[event_type],
+                name=event_type,
+                visible=(i == 0),
+                hovertext=dict_hovers[event_type],
+                hoverinfo="text"
+            )
+        )
+    
+    visibility = [False] * total_traces
+    for j in range(trace_counter, trace_counter + num_event_types):
+        visibility[j] = True
+        
+    buttons.append(dict(
+        label=continent,
+        method="update",
+        args=[{"visible": visibility},
+              {"title": f"Number of fatalities in {continent}"}]
+    ))
+    
+    trace_counter += num_event_types
+
+fig.update_layout(
+    template="plotly_white",
+    colorway=px.colors.qualitative.Set2,
+    updatemenus=[{
+        "buttons": buttons,
+        "direction": "down",
+        "showactive": True,
+        "x": 1.03,
+        "y": 0.40,
+        "xanchor": "left"
+    }],
+    barmode='stack', 
+    xaxis_title="Year",
+    yaxis_title="Total Fatalities",
+    legend_title="Event Type",
+    title=f"Number of fatalities in {continents[0]}",
+    hoverlabel=dict(align="left")
+)
+
+fig.update_xaxes(type='category')
+fig.show()
+```
+
+# 4. Geographic Distribution of Protests in the US
 
 A short description: In this section, we use choropleth maps to visualize the difference in the number of protests across the United States. We show both the number of protests in each state and the number of distinct events that took place during those protests.
 
@@ -204,7 +707,7 @@ fig.show()
 
 ```
 
-# 2. Character of Civil Disorders in the US
+# 5. Character of Civil Disorders in the US
 
 A short description: Here, we use the sunburst charts to show the numbers of incidents and their hierarchy in the United States. We show the distribution of incidents across different disorder types, event types, and sub-event types.
 
@@ -325,7 +828,7 @@ fig.update_annotations(
 fig.show()
 ```
 
-# 3. Regional monthly intensity of Disorders in the US
+# 6. Regional monthly intensity of Disorders in the US
 
 A short description: In this part, we use a heatmap to visualize the number of distinct events that took place in 10 most affected states in the US. This plot allows us to see how the intensity changes over months.
 
@@ -407,73 +910,4 @@ fig.update_layout(
 fig.update_traces(xgap=2, ygap=2)
 
 fig.show()
-```
-
-# 4. TODO
-
-A short description: [TODO]
-
-```{python}
-#| label: data-processing-TODO-4
-#| echo: false
-#| warning: false
-
-pass
-
-```
-
-```{python}
-#| label: fig1-TODO-4
-#| fig-cap: "TODO"
-#| echo: false
-#| warning: false
-
-pass
-
-```
-
-# 5. TODO
-
-A short description: [TODO]
-
-```{python}
-#| label: data-processing-TODO-5
-#| echo: false
-#| warning: false
-
-pass
-
-```
-
-```{python}
-#| label: fig1-TODO-5
-#| fig-cap: "TODO"
-#| echo: false
-#| warning: false
-
-pass
-
-```
-
-# 6. TODO
-
-A short description: [TODO]
-
-```{python}
-#| label: data-processing-TODO-6
-#| echo: false
-#| warning: false
-
-pass
-
-```
-
-```{python}
-#| label: fig1-TODO-6
-#| fig-cap: "TODO"
-#| echo: false
-#| warning: false
-
-pass
-
 ```
