@@ -1,5 +1,5 @@
 ---
-title: "Data Visualization Report"
+title: "Geopolitical Events Data Report"
 subtitle: "Poznań University of Technology"
 author: 
     - "Tomasz Białecki"
@@ -31,7 +31,7 @@ Key findings include:
 
 - Correlation Between Event Nature and Casualty Profiles: A clear link exists between the "type" of violence and "who" dies. In regions where military-centric events prevail, such as Africa and the Middle East, the violence is targeted, consequently, non-civilian fatalities vastly outnumber civilian ones.
 
-- Non-Lethality of Peaceful Protest: Despite the prevalence of civil expression in US and Canada region, the data confirms that **peaceful protests** contribute a statistically negligible number of fatalities.
+- Non-Lethality of Peaceful Protest: Despite the prevalence of civil expression in US and Canada region, the data confirms that peaceful protests contribute a statistically negligible number of fatalities.
 
 - Location: High concentration of events in the coastal states, particularly in California and New York.
 
@@ -53,14 +53,21 @@ import matplotlib.patches as mpatches
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import plotly.io as pio
 import textwrap
-raw_data = pd.read_excel("conflict data/US-and-Canada_aggregated_data_up_to-2026-02-28.xlsx")
+
+pio.templates.default = "plotly_white"
+
 africa_data = pd.read_excel('conflict data/Africa_aggregated_data_up_to-2026-02-28.xlsx')
 asia_pacific_data = pd.read_excel('conflict data/Asia-Pacific_aggregated_data_up_to-2026-02-28.xlsx')
 europe_cental_asia_data = pd.read_excel('conflict data/Europe-Central-Asia_aggregated_data_up_to-2026-02-28.xlsx')
 latin_america_data = pd.read_excel('conflict data/Latin-America-the-Caribbean_aggregated_data_up_to-2026-02-28.xlsx')
 middle_east_data = pd.read_excel('conflict data/Middle-East_aggregated_data_up_to-2026-02-28.xlsx')
 us_canada_data = pd.read_excel('conflict data/US-and-Canada_aggregated_data_up_to-2026-02-28.xlsx')
+
+civ_fat = pd.read_excel('conflict data/number_of_reported_civilian_fatalities_by_country-year_as-of-06Mar2026.xlsx')
+fat = pd.read_excel('conflict data/number_of_reported_fatalities_by_country-year_as-of-06Mar2026.xlsx')
+
 
 data = {
     'Africa': africa_data,
@@ -71,14 +78,23 @@ data = {
     'US Canada': us_canada_data
 }
 
-civ_fat = pd.read_excel('conflict data/number_of_reported_civilian_fatalities_by_country-year_as-of-06Mar2026.xlsx')
-fat = pd.read_excel('conflict data/number_of_reported_fatalities_by_country-year_as-of-06Mar2026.xlsx')
-
 region_countries = {k: [] for k in data.keys()}
 
 for region, reg_data in data.items():
     region_countries[region].extend(reg_data['COUNTRY'].unique().tolist())
 
+
+TITLE_FONT_SIZE_MPL = 16
+TITLE_FONT_SIZE_PLOTLY = 20
+LABEL_FONT_SIZE = 14
+TICK_FONT_SIZE = 12
+TITLE_FONT_WEIGHT = 'bold'
+TITLE_FONT_FAMILY = 'Arial'
+TITLE_FONT_COLOR = 'black'
+
+pio.templates["plotly_white"].layout.font.family = TITLE_FONT_FAMILY
+pio.templates["plotly_white"].layout.font.size = LABEL_FONT_SIZE
+pio.templates["plotly_white"].layout.font.color = TITLE_FONT_COLOR
 
 ```
 
@@ -225,23 +241,28 @@ merged_map_data = world_regions.merge(summary_df, on="Region", how="left")
 #| fig-cap: "Global distribution and structural breakdown of political violence and fatality proportions across six geopolitical regions"
 #| echo: false
 #| warning: false
-#| fig-width: 11
-#| fig-height: 16
+#| fig-width: 14
+#| fig-height: 15
 #| out-width: 100%
 #| fig-format: svg
 
 
-fig = plt.figure(figsize=(11, 16))
+fig = plt.figure(figsize=(11, 15))
 
 gs = gridspec.GridSpec(
     2, 2, figure=fig, 
-    height_ratios=[1, 0.8], 
-    hspace=0.2, 
-    wspace=0.1
+    height_ratios=[1, 0.4], 
+    hspace=0.1, 
+    wspace=0.05
 )
 
 ax_map1 = fig.add_subplot(gs[0, 0])
-ax_map1.set_title("Total Political Violence Events", fontsize=15, fontweight="bold", pad=15)
+ax_map1.set_title("Total Political Violence Events",     
+    family=TITLE_FONT_FAMILY,
+    color=TITLE_FONT_COLOR,
+    fontsize=TITLE_FONT_SIZE_MPL,
+    fontweight=TITLE_FONT_WEIGHT,
+    pad=15)
 
 world_regions.plot(ax=ax_map1, color="#f4f4f4", edgecolor="none")
 merged_map_data.dropna(subset=["Events"]).plot(
@@ -261,7 +282,12 @@ ax_map1.axis("off")
 
 
 ax_map2 = fig.add_subplot(gs[0, 1])
-ax_map2.set_title("Fatalities to Events Proportion", fontsize=15, fontweight="bold", pad=15)
+ax_map2.set_title("Fatalities to Events Proportion",     
+    family=TITLE_FONT_FAMILY,
+    color=TITLE_FONT_COLOR,
+    fontsize=TITLE_FONT_SIZE_MPL,
+    fontweight=TITLE_FONT_WEIGHT,
+    pad=15)
 
 world_regions.plot(ax=ax_map2, color="#f4f4f4", edgecolor="none")
 merged_map_data.dropna(subset=["Fatalities_to_Events"]).plot(
@@ -281,7 +307,12 @@ ax_map2.axis("off")
 
 
 ax_bar = fig.add_subplot(gs[1, :])
-ax_bar.set_title("Proportion of Disorder Types by Region", fontsize=15, fontweight="bold", pad=20)
+ax_bar.set_title("Proportion of Disorder Types",
+    family=TITLE_FONT_FAMILY,
+    color=TITLE_FONT_COLOR,
+    fontsize=TITLE_FONT_SIZE_MPL,
+    fontweight=TITLE_FONT_WEIGHT,
+    pad=20)
 
 props_df_sorted = props_df.iloc[::-1]
 colors = plt.cm.get_cmap("Set2", len(all_event_types))
@@ -301,16 +332,17 @@ for idx, event_type in enumerate(all_event_types):
 ax_bar.spines["top"].set_visible(False)
 ax_bar.spines["right"].set_visible(False)
 ax_bar.spines["left"].set_visible(False)
-ax_bar.set_xlabel("Proportion of Events", fontsize=14)
+ax_bar.spines["bottom"].set_visible(False)
+ax_bar.xaxis.set_visible(False)
 ax_bar.set_xlim(0, 1.0)
-ax_bar.tick_params(axis="both", which="major", labelsize=13)
+ax_bar.tick_params(axis="both", which="major", length=0, labelsize=TICK_FONT_SIZE)
 
 ax_bar.legend(
     loc="upper center",
     bbox_to_anchor=(0.5, -0.15),
     ncol=len(all_event_types),
     frameon=False,
-    fontsize=13,
+    fontsize=TICK_FONT_SIZE,
 )
 
 plt.tight_layout()
@@ -381,8 +413,11 @@ df_to_plot.plot.barh(
 
 ax.set_title(
     "Proportion of Civilian and Non-Civilian Fatalities by Region",
-    fontsize=16,
-    pad=20,
+    family=TITLE_FONT_FAMILY,
+    color=TITLE_FONT_COLOR,
+    fontsize=TITLE_FONT_SIZE_MPL,
+    fontweight=TITLE_FONT_WEIGHT,
+    pad=15,
 )
 
 ax.xaxis.set_visible(False)
@@ -402,7 +437,7 @@ ax.spines["right"].set_visible(False)
 ax.spines["left"].set_visible(False)
 ax.spines["bottom"].set_visible(False)
 
-ax.tick_params(axis="both", which="both", length=0, labelsize=11)
+ax.tick_params(axis="both", which="both", length=0, labelsize=TICK_FONT_SIZE)
 
 bar_handles, bar_labels = ax.get_legend_handles_labels()
 
@@ -421,7 +456,7 @@ ax.legend(
     bbox_to_anchor=(0.5, -0.12),
     ncol=2,
     frameon=False,
-    fontsize=11,
+    fontsize=TICK_FONT_SIZE,
 )
 
 plt.tight_layout()
@@ -555,6 +590,11 @@ fig.update_layout(
     yaxis_title="Total Fatalities",
     legend_title="Event Type",
     title=f"Number of fatalities in {continents[0]}",
+    title_x=0.5,
+    font_family=TITLE_FONT_FAMILY,
+    title_font_size=TITLE_FONT_SIZE_PLOTLY,
+    title_font_color=TITLE_FONT_COLOR,
+    title_font_weight=TITLE_FONT_WEIGHT,
     hoverlabel=dict(align="left")
 )
 
@@ -564,7 +604,7 @@ fig.show()
 
 # 4. Geographic Distribution of Protests in the US
 
-A short description: In this section, we use choropleth maps to visualize the difference in the number of protests across the United States. We show both the number of protests in each state and the number of distinct events that took place during those protests.
+The choropleth maps visualize the difference in the number of protests across the United States. The visualization shows both the number of protests in each state and the number of distinct events that took place during those protests.
 
 ```{python}
 #| label: data-processing-US-protests
@@ -572,7 +612,7 @@ A short description: In this section, we use choropleth maps to visualize the di
 #| warning: false
 
 columns_to_keep = ["WEEK", "COUNTRY", "ADMIN1", "EVENT_TYPE", "EVENTS"]
-american_data = raw_data[columns_to_keep]
+american_data = data["US Canada"][columns_to_keep]
 
 american_data = american_data[american_data["COUNTRY"] == "United States"]
 american_data = american_data[american_data["EVENT_TYPE"] == "Protests"]
@@ -622,7 +662,7 @@ fig = px.choropleth(
     hover_name='STATE', 
     hover_data={'STATE_CODE': False, 'YEAR': False, 'PROTESTS': True},
     title="Number of Protests in the United States",
-    color_continuous_scale="Reds"
+    color_continuous_scale="Blues"
 )
 
 fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1], yanchor="top"))
@@ -638,10 +678,11 @@ fig.update_layout(
     height=650,
     margin={"r":20,"t":120,"l":20,"b":20},
     title_x=0.5,
-    font_size=22,
-    font_family="Arial",
-    title_font_size=38,
-    title_font_color="black",
+    font_size=16,
+    font_family=TITLE_FONT_FAMILY,
+    title_font_size=TITLE_FONT_SIZE_PLOTLY,
+    title_font_color=TITLE_FONT_COLOR,
+    title_font_weight=TITLE_FONT_WEIGHT,
     
     coloraxis_colorbar=dict(
         title="Protests",
@@ -673,7 +714,7 @@ fig = px.choropleth(
     hover_name='STATE', 
     hover_data={'STATE_CODE': False, 'YEAR': False, 'EVENTS': True},
     title="Number of events during protests in the United States",
-    color_continuous_scale="Reds"
+    color_continuous_scale="Blues"
 )
 
 fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1], yanchor="top"))
@@ -689,10 +730,11 @@ fig.update_layout(
     height=650,
     margin={"r":20,"t":120,"l":20,"b":20},
     title_x=0.5,
-    font_size=22,
-    font_family="Arial",
-    title_font_size=38,
-    title_font_color="black",
+    font_size=16,
+    font_family=TITLE_FONT_FAMILY,
+    title_font_size=TITLE_FONT_SIZE_PLOTLY,
+    title_font_color=TITLE_FONT_COLOR,
+    title_font_weight=TITLE_FONT_WEIGHT,
     
     coloraxis_colorbar=dict(
         title="Events",
@@ -709,14 +751,14 @@ fig.show()
 
 # 5. Character of Civil Disorders in the US
 
-A short description: Here, we use the sunburst charts to show the numbers of incidents and their hierarchy in the United States. We show the distribution of incidents across different disorder types, event types, and sub-event types.
+The sunburst charts show the numbers of incidents and their hierarchy in the United States. The goal of this visualization is to show the distribution of incidents across different disorder types, event types, and sub-event types.
 
 ```{python}
 #| label: data-processing-disorder-character
 #| echo: false
 #| warning: false
 columns_to_keep = ["WEEK", "COUNTRY", "ADMIN1", "EVENT_TYPE", "SUB_EVENT_TYPE", "EVENTS", "DISORDER_TYPE", "ID"]
-df = raw_data[columns_to_keep]
+df = data["US Canada"][columns_to_keep]
 df = df[df["COUNTRY"] == "United States"]
 
 ```
@@ -772,7 +814,7 @@ def get_polished_hierarchy(df, group_name):
 
 groups = ['Demonstrations', 'Strategic developments', 'Political violence']
 groups_newlines = [f"Demonstrations", f"Strategic<br>developments", f"Political<br>violence"]
-colors = ['#2c3e50', '#27ae60', '#e74c3c'] 
+colors = px.colors.qualitative.Set2[:3]
 
 fig = make_subplots(
     rows=1, cols=3,
@@ -792,7 +834,7 @@ for i, group in enumerate(groups):
         branchvalues="total",
         
         marker=dict(
-            colorscale=[[0, 'white'], [1, colors[i]]],
+            colors=[colors[i]] * len(ids),
             line=dict(color='white', width=2)
         ),
         hovertemplate=(
@@ -813,15 +855,18 @@ fig.update_layout(
     ),
     # width=1350,
     height=700,        
-    font=dict(family="Arial", size=18),
-    title_font=dict(size=38, color="#2c3e50"),
+    font=dict(size=TICK_FONT_SIZE),
+    font_family=TITLE_FONT_FAMILY,
+    title_font_size=TITLE_FONT_SIZE_PLOTLY,
+    title_font_color=TITLE_FONT_COLOR,
+    title_font_weight=TITLE_FONT_WEIGHT,
     margin=dict(t=180, b=40, l=20, r=20), 
     paper_bgcolor='white',
 )
 
 fig.update_annotations(
-    font_size=28, 
-    font_color="#2c3e50", 
+    font_size=LABEL_FONT_SIZE, 
+    font_color=TITLE_FONT_COLOR, 
     yanchor="top",
 )
 
@@ -830,14 +875,14 @@ fig.show()
 
 # 6. Regional monthly intensity of Disorders in the US
 
-A short description: In this part, we use a heatmap to visualize the number of distinct events that took place in 10 most affected states in the US. This plot allows us to see how the intensity changes over months.
+The following heatmap visualizes the number of distinct events that took place in 10 most affected states in the US. The plot shows how the intensity changes over months.
 
 ```{python}
 #| label: data-processing-monthly-intensity
 #| echo: false
 #| warning: false
 columns_to_keep = ["WEEK", "COUNTRY", "ADMIN1", "EVENTS"]
-df = raw_data[columns_to_keep]
+df = data["US Canada"][columns_to_keep]
 
 df = df[df["COUNTRY"] == "United States"]
 
@@ -871,7 +916,7 @@ fig = px.imshow(
     labels=dict(x="Date", y="State", color="Total Events"),
     x=pivot_df.columns,
     y=pivot_df.index,
-    color_continuous_scale="YlOrRd",
+    color_continuous_scale="Blues",
     aspect="auto", 
     title="<b>Regional Intensity of Disorder</b><br>Monthly Distinct Events (Top 10 States)"
 )
@@ -883,9 +928,10 @@ fig.update_layout(
     title_x=0.5,
     
     font_size=16,
-    font_family="Arial",
-    title_font_size=30,
-    title_font_color="black",
+    font_family=TITLE_FONT_FAMILY,
+    title_font_size=TITLE_FONT_SIZE_PLOTLY,
+    title_font_color=TITLE_FONT_COLOR,
+    title_font_weight=TITLE_FONT_WEIGHT,
 
     margin={"r":20,"t":120,"l":120,"b":50},
     

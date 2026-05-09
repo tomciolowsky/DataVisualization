@@ -24,3 +24,7 @@ header#title-block-header {
         padding-right: 0;
     }
 }
+
+p {
+    text-align: justify;
+}
