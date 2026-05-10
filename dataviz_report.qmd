@@ -84,10 +84,12 @@ for region, reg_data in data.items():
     region_countries[region].extend(reg_data['COUNTRY'].unique().tolist())
 
 
-TITLE_FONT_SIZE_MPL = 16
-TITLE_FONT_SIZE_PLOTLY = 20
+TITLE_FONT_SIZE_MPL = 20
+TITLE_FONT_SIZE_PLOTLY = 24
 LABEL_FONT_SIZE = 14
 TICK_FONT_SIZE = 12
+SUNBURST_LABEL_FONT_SIZE = 18
+SUNBURST_TEXT_FONT_SIZE = 14
 TITLE_FONT_WEIGHT = 'bold'
 TITLE_FONT_FAMILY = 'Arial'
 TITLE_FONT_COLOR = 'black'
@@ -569,7 +571,7 @@ for i, continent in enumerate(continents):
         label=continent,
         method="update",
         args=[{"visible": visibility},
-              {"title": f"Number of fatalities in {continent}"}]
+              {"title.text": f"Number of fatalities in {continent}"}]
     ))
     
     trace_counter += num_event_types
@@ -591,6 +593,7 @@ fig.update_layout(
     legend_title="Event Type",
     title=f"Number of fatalities in {continents[0]}",
     title_x=0.5,
+    title_y=0.97,
     font_family=TITLE_FONT_FAMILY,
     title_font_size=TITLE_FONT_SIZE_PLOTLY,
     title_font_color=TITLE_FONT_COLOR,
@@ -855,7 +858,7 @@ fig.update_layout(
     ),
     # width=1350,
     height=700,        
-    font=dict(size=TICK_FONT_SIZE),
+    font=dict(size=SUNBURST_TEXT_FONT_SIZE),
     font_family=TITLE_FONT_FAMILY,
     title_font_size=TITLE_FONT_SIZE_PLOTLY,
     title_font_color=TITLE_FONT_COLOR,
@@ -865,7 +868,7 @@ fig.update_layout(
 )
 
 fig.update_annotations(
-    font_size=LABEL_FONT_SIZE, 
+    font_size=SUNBURST_LABEL_FONT_SIZE, 
     font_color=TITLE_FONT_COLOR, 
     yanchor="top",
 )
